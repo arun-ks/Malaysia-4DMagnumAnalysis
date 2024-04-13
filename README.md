@@ -9,8 +9,8 @@ Then, a draw is conducted to pick 23 winning numbers split into 4 categories - 1
 This has a statistical Analysis of distribution of results of a 1 specific Malaysian online 4D bettting site [4D Magnum](https://magnum4d.my/en/).
 
 
-### Extracting Historical Data of 4D Winning Numbers
-This includes a script to extract historical data extracted from [its website](https://magnum4d.my/en/winning-history) .
+### Extracting Historical Data of 4D Winning Numbers 
+This includes a script [ExtractMagum4DHistoryWithRetry.py](ExtractMagum4DHistoryWithRetry.py) to extract historical data extracted from [its website](https://magnum4d.my/en/winning-history) .
 
 > [!WARNING]
 > Do not use the script to scrape. The APIs have limits on how many calls it can take.
