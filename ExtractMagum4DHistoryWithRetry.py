@@ -11,6 +11,7 @@ import random
 import requests
 import sys
 import time
+from datetime import datetime
 
 # Function to call the API for a given 4-digit number
 def call_api_and_write_to_csv(num, writer):
@@ -21,6 +22,7 @@ def call_api_and_write_to_csv(num, writer):
             data = response.json()
             if 'WinningHistory4D' in data:
                 for entry in data['WinningHistory4D']['Drawn']:
+                    print(f"          {entry}");
                     writer.writerow(entry)
                     csvfile.flush()  # Ensure data is written to the file immediately
         else:
@@ -36,7 +38,7 @@ def call_api_and_write_to_csv(num, writer):
 if len(sys.argv) > 1:
     last_num = int(sys.argv[1])
 else:
-    last_num = 0
+    last_num = -1   # as there is a +1 later and we want to start with 0
 
 # Write data as CSV Files
 fieldnames = ['Number', 'Meaning', 'DrawDate', 'DrawID', 'PrizeType', 'PrizeDesc', 'PrizeDescZh']
@@ -48,5 +50,8 @@ with open('winning_history_4D_Magnum.csv', 'a', newline='') as csvfile:
         call_api_and_write_to_csv(num_str, writer)        
         # Add random delay (0-3 seconds) if needed
         delay = 0 # random.randint(0, 3)
-        print(f"Processed {num_str}. Waiting for {delay} seconds...")
+        delay = random.randint(0, 4)
+        now = datetime.now()
+        formatted_dt = now.strftime("%Y%m%d_%H%M%S")
+        print(f"{formatted_dt} Processed {num_str}. Waiting for {delay} seconds...")
         time.sleep(delay)

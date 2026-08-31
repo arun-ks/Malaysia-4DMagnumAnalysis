@@ -15,7 +15,7 @@ This includes a script [ExtractMagum4DHistoryWithRetry.py](ExtractMagum4DHistory
 > [!WARNING]
 > Use the script sparingly to scrape, as the APIs have limits on how many calls it can take.
 
-The script sleeps & tries again if the timeouts happen, but if possible use the [data extracted on 07-Apr-2024](winning_history_4D_Magnum.csv).
+The script sleeps & tries again if the timeouts happen, but if possible use the [data extracted on 31-Aug-2026](winning_history_4D_Magnum.csv).
 
 ### Basic Statistical Analysis of Magnum 4D results
 The analysis is restricted to checking if there are any outliners numbers which get picked often or if there is any preference for any subset of numbers.
