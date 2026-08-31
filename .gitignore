@@ -1,0 +1,3 @@
+.venv/
+.jupyterlab.*.log
+.ipynb_checkpoints/
