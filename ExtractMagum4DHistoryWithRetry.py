@@ -5,7 +5,6 @@
 #    In case the application aborts anyway, you can call this script with command line parameter of the last successful function call.
 #            you can do this with `tail -1 winning_history_4D_Magnum.csv | cut -d, -f1`
 
-
 import csv
 import random
 import requests
