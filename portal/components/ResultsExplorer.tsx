@@ -335,7 +335,7 @@ export function ResultsExplorer() {
         <div><Coffee size={23} /><span><strong>{t.enjoying}</strong><small>{t.supportCopy}</small></span></div>
         <a href="/contribute">{t.contribute}</a>
       </section>
-      <footer className="shell"><span>4D Results · {t.historicalOnly}</span><a href="mailto:info@result4d.com.my">{t.sendFeedback}</a></footer>
+      <footer className="shell"><span>4D Results · {t.historicalOnly}</span><span className="footer-links"><a href="/privacy">{t.privacyLink}</a><a href="mailto:info@result4d.com.my">{t.sendFeedback}</a></span></footer>
     </main>
   );
 }
