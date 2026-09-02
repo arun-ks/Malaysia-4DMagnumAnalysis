@@ -3,3 +3,11 @@
 .ipynb_checkpoints/
 __pycache__/
 *.py[cod]
+
+# Next.js portal
+portal/node_modules/
+portal/.next/
+portal/out/
+portal/*.tsbuildinfo
+portal/.env*
+!portal/.env.example
