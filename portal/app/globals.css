@@ -193,3 +193,24 @@ footer a { color: var(--red); font-weight: 700; }
 .number-slider input[type="range"]::-webkit-slider-runnable-track { height: 3px; border-radius: 3px; background: #d8c5a4; }
 .number-slider input[type="range"]::-webkit-slider-thumb { margin-top: -6px; }
 .number-slider input[type="range"]::-moz-range-track { height: 3px; border-radius: 3px; background: #d8c5a4; }
+
+.header-actions { display: flex; align-items: center; gap: 14px; }
+.language-picker select { min-height: 38px; max-width: 152px; padding: 0 30px 0 10px; border: 1px solid #d9d0c0; border-radius: 10px; background: #fffefa; color: var(--ink); font-size: 13px; font-weight: 700; cursor: pointer; }
+:focus-visible { outline: 3px solid rgba(180, 35, 24, .35); outline-offset: 3px; }
+.brand:is(a) { text-decoration: none; }
+.contribute-page { min-height: 100vh; }
+.contribute-shell { width: min(620px, calc(100% - 32px)); margin: 0 auto; padding: 90px 0 60px; text-align: center; }
+.contribute-icon { width: 74px; height: 74px; display: grid; place-items: center; margin: 0 auto 22px; border-radius: 24px; background: #221c15; color: var(--gold); box-shadow: var(--shadow); }
+.contribute-shell .eyebrow { justify-content: center; }
+.contribute-shell h1 { max-width: 600px; font-size: clamp(38px, 8vw, 58px); }
+.contribute-shell > p:not(.eyebrow) { max-width: 540px; margin: 20px auto 0; color: var(--muted); font-size: 17px; line-height: 1.65; }
+.coming-soon { margin: 30px 0; padding: 18px; border: 1px solid #efd6a6; border-radius: 15px; background: #fff8e9; color: #725b33; font-weight: 800; }
+.contribute-actions { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; }
+.contribute-actions a { min-height: 46px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 0 15px; border: 1px solid #d9d0c0; border-radius: 11px; background: white; color: var(--ink); text-decoration: none; font-size: 13px; font-weight: 800; }
+.contribute-actions a:first-child { border-color: var(--red); color: var(--red); }
+@media (max-width: 720px) {
+  .header-actions { gap: 4px; }
+  .language-picker select { max-width: 118px; min-height: 40px; font-size: 12px; }
+  .contribute-shell { padding-top: 58px; }
+  .contribute-actions { display: grid; }
+}

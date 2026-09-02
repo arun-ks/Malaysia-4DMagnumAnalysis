@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { CalendarDays, ChevronRight, Coffee, Dices, Info, Mail, Search, Sparkles } from "lucide-react";
+import { useLanguage } from "@/hooks/useLanguage";
+import { LANGUAGE_OPTIONS, type Language, type Translation } from "@/lib/i18n";
 import {
   buildPoints,
   daysBetween,
@@ -12,13 +14,6 @@ import {
   type ResultPoint,
 } from "@/lib/history";
 
-const PRIZE_LABELS: Record<PrizeType, string> = {
-  "1": "1st prize",
-  "2": "2nd prize",
-  "3": "3rd prize",
-  C: "Consolation",
-  S: "Special",
-};
 const PRIZE_COLORS: Record<PrizeType, string> = {
   "1": "#b8860b",
   "2": "#64748b",
@@ -26,7 +21,6 @@ const PRIZE_COLORS: Record<PrizeType, string> = {
   C: "#7c3aed",
   S: "#07835d",
 };
-const SHAPES = ["Circle", "Square", "Diamond"];
 const DAY_MS = 86_400_000;
 
 type InputSource = "manual" | "slider" | "lucky" | "empty";
@@ -41,8 +35,8 @@ function getSessionId() {
   return value;
 }
 
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat("en-MY", { day: "numeric", month: "short", year: "numeric" }).format(
+function formatDate(value: string, language: Language) {
+  return new Intl.DateTimeFormat(language, { day: "numeric", month: "short", year: "numeric" }).format(
     new Date(`${value}T00:00:00Z`),
   );
 }
@@ -64,6 +58,7 @@ function Marker({ x, y, shape, color, prize, selected }: { x: number; y: number;
 }
 
 export function ResultsExplorer() {
+  const { language, setLanguage, t } = useLanguage();
   const [data, setData] = useState<HistoryData | null>(null);
   const [loadError, setLoadError] = useState(false);
   const [inputs, setInputs] = useState(["", "", ""]);
@@ -72,7 +67,7 @@ export function ResultsExplorer() {
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [selectedPoint, setSelectedPoint] = useState<ResultPoint | null>(null);
-  const [showIntervals, setShowIntervals] = useState(true);
+  const [showIntervals, setShowIntervals] = useState(false);
   const logTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastLogged = useRef("");
 
@@ -118,7 +113,7 @@ export function ResultsExplorer() {
           eventId: crypto.randomUUID(),
           sessionId: getSessionId(),
           numbers: manualNumbers,
-          language: "en",
+          language,
         }),
         keepalive: true,
       }).catch(() => undefined);
@@ -210,30 +205,30 @@ export function ResultsExplorer() {
     <main>
       <header className="site-header">
         <div className="brand"><span className="brand-mark">4D</span><span>Results</span></div>
-        <a className="header-link" href="mailto:info@result4d.com.my"><Mail size={17} /> Feedback</a>
+        <div className="header-actions"><label className="language-picker"><span className="sr-only">{t.language}</span><select value={language} onChange={(event) => setLanguage(event.target.value as Language)} aria-label={t.language}>{LANGUAGE_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label><a className="header-link" href="mailto:info@result4d.com.my"><Mail size={17} /> {t.feedback}</a></div>
       </header>
 
       <section className="hero shell">
         <div>
-          <p className="eyebrow"><Sparkles size={15} /> Magnum 4D history explorer</p>
-          <h1>When did your number last win?</h1>
-          <p className="hero-copy">Compare up to three numbers across more than 40 years of draw history.</p>
+          <p className="eyebrow"><Sparkles size={15} /> {t.eyebrow}</p>
+          <h1>{t.headline}</h1>
+          <p className="hero-copy">{t.heroCopy}</p>
         </div>
-        <div className="freshness"><CalendarDays size={18} /><span>Results updated through <strong>{data ? formatDate(data.updatedThrough) : "Loading…"}</strong></span></div>
+        <div className="freshness"><CalendarDays size={18} /><span>{t.updatedThrough} <strong>{data ? formatDate(data.updatedThrough, language) : t.loading}</strong></span></div>
       </section>
 
       <section className="shell controls-card" aria-labelledby="number-heading">
         <div className="section-heading">
-          <div><span className="step">1</span><h2 id="number-heading">Choose your numbers</h2></div>
-          <button className="lucky-button" type="button" onClick={feelLucky}><Dices size={19} /> Pick for me</button>
+          <div><span className="step">1</span><h2 id="number-heading">{t.chooseNumbers}</h2></div>
+          <button className="lucky-button" type="button" onClick={feelLucky}><Dices size={19} /> {t.pickForMe}</button>
         </div>
 
         <div className="number-inputs">
           {inputs.map((value, index) => (
             <label key={index} className="number-field">
-              <span>{index === 0 ? "Your number" : `Compare ${index + 1}`} {index > 0 && <em>optional</em>}</span>
+              <span>{index === 0 ? t.yourNumber : `${t.compare} ${index + 1}`} {index > 0 && <em>{t.optional}</em>}</span>
               <div className="input-with-shape">
-                <span className={`shape shape-${index}`} aria-label={SHAPES[index]} />
+                <span className={`shape shape-${index}`} aria-hidden="true" />
                 <input
                   inputMode="numeric"
                   pattern="[0-9]*"
@@ -249,69 +244,71 @@ export function ResultsExplorer() {
             </label>
           ))}
         </div>
-        {hasDuplicates && <p className="error" role="alert">Each selected number must be unique.</p>}
+        {hasDuplicates && <p className="error" role="alert">{t.uniqueError}</p>}
 
         <label className="number-slider">
-          <span>Or slide to choose your first number <strong>{normalized[0] ?? "0000"}</strong></span>
-          <input type="range" min="0" max="9999" value={normalized[0] ? Number(normalized[0]) : 0} onChange={(event) => handleSlider(event.target.value)} />
+          <span>{t.slideNumber} <strong>{normalized[0] ?? "0000"}</strong></span>
+          <input type="range" min="0" max="9999" value={normalized[0] ? Number(normalized[0]) : 0} onChange={(event) => handleSlider(event.target.value)} aria-label={t.slideNumber} />
         </label>
 
         <fieldset className="prize-filter">
-          <legend className="sr-only">Prize types</legend>
+          <legend className="sr-only">{t.prizeTypes}</legend>
           <div className="prize-options">
             {PRIZE_TYPES.map((prize) => (
               <label key={prize} className={selectedPrizes.has(prize) ? "active" : ""} style={{ "--prize": PRIZE_COLORS[prize] } as React.CSSProperties}>
                 <input type="checkbox" checked={selectedPrizes.has(prize)} onChange={() => togglePrize(prize)} />
-                <span className="color-dot" />{PRIZE_LABELS[prize]}
+                <span className="color-dot" />{t.prizes[prize]}
               </label>
             ))}
           </div>
         </fieldset>
       </section>
 
-      {loadError && <section className="shell status-card error">The history file could not be loaded. Please refresh and try again.</section>}
-      {!loadError && !data && <section className="shell status-card">Loading draw history…</section>}
+      {loadError && <section className="shell status-card error">{t.loadError}</section>}
+      {!loadError && !data && <section className="shell status-card">{t.loading}</section>}
       {data && !selectedNumbers.length && (
-        <section className="shell empty-state"><Search size={30} /><h2>Enter a number to begin</h2><p>Your timeline and last-result summary will appear here.</p></section>
+        <section className="shell empty-state"><Search size={30} /><h2>{t.enterNumber}</h2><p>{t.emptyCopy}</p></section>
       )}
 
       {data && selectedNumbers.length > 0 && !hasDuplicates && (
         <>
           <section className="shell chart-card" aria-labelledby="graph-heading">
-            <h2 id="graph-heading" className="sr-only">Results graph</h2>
+            <h2 id="graph-heading" className="sr-only">{t.resultsGraph}</h2>
             <Timeline
               numbers={selectedNumbers}
               points={points}
               fromDate={fromDate}
               toDate={toDate}
+              language={language}
+              t={t}
               selectedPoint={selectedPoint}
               onSelect={setSelectedPoint}
             />
             {selectedPoint && (
               <div className="point-detail" role="status">
-                <span className="detail-prize" style={{ background: PRIZE_COLORS[selectedPoint.prizeType] }}>{PRIZE_LABELS[selectedPoint.prizeType]}</span>
+                <span className="detail-prize" style={{ background: PRIZE_COLORS[selectedPoint.prizeType] }}>{t.prizes[selectedPoint.prizeType]}</span>
                 <strong>{selectedPoint.number}</strong>
-                <span>{formatDate(selectedPoint.date)} · Draw {selectedPoint.drawId}</span>
-                <span>{selectedPoint.daysSincePrevious === null ? "First recorded appearance" : `${selectedPoint.daysSincePrevious.toLocaleString()} days since its previous appearance`}</span>
+                <span>{formatDate(selectedPoint.date, language)} · {t.draw} {selectedPoint.drawId}</span>
+                <span>{selectedPoint.daysSincePrevious === null ? t.firstRecorded : `${selectedPoint.daysSincePrevious.toLocaleString(language)} ${t.daysSincePrevious}`}</span>
               </div>
             )}
             <div className="timeline-controls">
-              <div className="timeline-control-heading"><strong>Result timeline</strong><span>{points.length.toLocaleString()} matching appearances</span></div>
-              <DateControls setPreset={setPreset} />
+              <div className="timeline-control-heading"><strong>{t.resultTimeline}</strong><span>{points.length.toLocaleString(language)} {t.matchingAppearances}</span></div>
+              <DateControls setPreset={setPreset} t={t} />
             </div>
           </section>
 
           <section className="shell summary-section" aria-labelledby="summary-heading">
-            <div className="section-title-row"><div><h2 id="summary-heading">Last result</h2></div><span className="muted">Across selected prize types</span></div>
+            <div className="section-title-row"><div><h2 id="summary-heading">{t.lastResult}</h2></div><span className="muted">{t.acrossPrizes}</span></div>
             <div className="summary-grid">
               {summaries.map((summary, index) => (
                 <article className="summary-card" key={summary.number}>
                   <div className="summary-number"><span className={`shape shape-${index}`} />{summary.number}</div>
                   {summary.last ? <>
-                    <strong>{summary.daysAgo === 0 ? "Latest draw" : `${summary.daysAgo?.toLocaleString()} days ago`}</strong>
-                    <span>{formatDate(summary.last.date)} · {PRIZE_LABELS[summary.last.prizeType]}</span>
-                    <small>{summary.count.toLocaleString()} appearances in total</small>
-                  </> : <><strong>No matching result</strong><span>Try another prize type.</span></>}
+                    <strong>{summary.daysAgo === 0 ? t.latestDraw : `${summary.daysAgo?.toLocaleString(language)} ${t.daysAgo}`}</strong>
+                    <span>{formatDate(summary.last.date, language)} · {t.prizes[summary.last.prizeType]}</span>
+                    <small>{summary.count.toLocaleString(language)} {t.appearancesTotal}</small>
+                  </> : <><strong>{t.noMatching}</strong><span>{t.tryPrize}</span></>}
                 </article>
               ))}
             </div>
@@ -319,44 +316,44 @@ export function ResultsExplorer() {
 
           <section className="shell intervals-card">
             <button type="button" className="interval-toggle" onClick={() => setShowIntervals((value) => !value)} aria-expanded={showIntervals}>
-              <span><strong>Time between results</strong><small>Most recent intervals in the selected range</small></span><ChevronRight className={showIntervals ? "rotated" : ""} />
+              <span><strong>{t.timeBetween}</strong><small>{t.recentIntervals}</small></span><ChevronRight className={showIntervals ? "rotated" : ""} />
             </button>
             {showIntervals && (
               intervals.length ? <div className="interval-list">
                 {intervals.map((point) => (
                   <button key={`${point.number}-${point.date}-${point.drawId}`} type="button" onClick={() => setSelectedPoint(point)}>
-                    <span className="interval-number">{point.number}</span><span>{formatDate(point.date)}</span><strong>{point.daysSincePrevious?.toLocaleString()} days</strong>
+                    <span className="interval-number">{point.number}</span><span>{formatDate(point.date, language)}</span><strong>{point.daysSincePrevious?.toLocaleString(language)} {t.days}</strong>
                   </button>
                 ))}
-              </div> : <p className="muted interval-empty">No intervals are available in this date range.</p>
+              </div> : <p className="muted interval-empty">{t.noIntervals}</p>
             )}
           </section>
         </>
       )}
 
       <section className="shell support-card">
-        <div><Coffee size={23} /><span><strong>Enjoying 4D Results?</strong><small>Help us keep this service available to everyone.</small></span></div>
-        <a href="/contribute">Contribute to keep this service free</a>
+        <div><Coffee size={23} /><span><strong>{t.enjoying}</strong><small>{t.supportCopy}</small></span></div>
+        <a href="/contribute">{t.contribute}</a>
       </section>
-      <footer className="shell"><span>4D Results · Historical information only</span><a href="mailto:info@result4d.com.my">Send feedback</a></footer>
+      <footer className="shell"><span>4D Results · {t.historicalOnly}</span><a href="mailto:info@result4d.com.my">{t.sendFeedback}</a></footer>
     </main>
   );
 }
 
-function DateControls({ setPreset }: { setPreset: (value: number | "all") => void }) {
+function DateControls({ setPreset, t }: { setPreset: (value: number | "all") => void; t: Translation }) {
   return <div className="date-controls">
     <div className="presets">
-      <button type="button" onClick={() => setPreset(6)}>6 months</button>
-      <button type="button" onClick={() => setPreset(12)}>1 year</button>
-      <button type="button" onClick={() => setPreset(24)}>2 years</button>
-      <button type="button" onClick={() => setPreset(60)}>5 years</button>
-      <button type="button" onClick={() => setPreset(120)}>10 years</button>
-      <button type="button" onClick={() => setPreset("all")}>All</button>
+      <button type="button" onClick={() => setPreset(6)}>{t.sixMonths}</button>
+      <button type="button" onClick={() => setPreset(12)}>{t.oneYear}</button>
+      <button type="button" onClick={() => setPreset(24)}>{t.twoYears}</button>
+      <button type="button" onClick={() => setPreset(60)}>{t.fiveYears}</button>
+      <button type="button" onClick={() => setPreset(120)}>{t.tenYears}</button>
+      <button type="button" onClick={() => setPreset("all")}>{t.all}</button>
     </div>
   </div>;
 }
 
-function Timeline({ numbers, points, fromDate, toDate, selectedPoint, onSelect }: { numbers: string[]; points: ResultPoint[]; fromDate: string; toDate: string; selectedPoint: ResultPoint | null; onSelect: (point: ResultPoint) => void }) {
+function Timeline({ numbers, points, fromDate, toDate, language, t, selectedPoint, onSelect }: { numbers: string[]; points: ResultPoint[]; fromDate: string; toDate: string; language: Language; t: Translation; selectedPoint: ResultPoint | null; onSelect: (point: ResultPoint) => void }) {
   const width = 1000;
   const left = 86;
   const right = 28;
@@ -372,15 +369,15 @@ function Timeline({ numbers, points, fromDate, toDate, selectedPoint, onSelect }
     return { date, x: left + ((width - left - right) * index) / 4 };
   });
 
-  if (!points.length) return <div className="chart-empty"><Info size={20} />No matching results in this date range.</div>;
-  return <div className="timeline-scroll"><svg className="timeline" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Timeline of selected number results">
-    {ticks.map((tick) => <g key={tick.date}><line x1={tick.x} x2={tick.x} y1={top - 8} y2={height - 38} className="grid-line" /><text x={tick.x} y={height - 13} textAnchor={tick.x === left ? "start" : tick.x > width - right - 2 ? "end" : "middle"} className="axis-text">{formatDate(tick.date)}</text></g>)}
+  if (!points.length) return <div className="chart-empty"><Info size={20} />{t.noGraphResults}</div>;
+  return <div className="timeline-scroll"><svg className="timeline" viewBox={`0 0 ${width} ${height}`} role="img" aria-label={t.graphAria}>
+    {ticks.map((tick) => <g key={tick.date}><line x1={tick.x} x2={tick.x} y1={top - 8} y2={height - 38} className="grid-line" /><text x={tick.x} y={height - 13} textAnchor={tick.x === left ? "start" : tick.x > width - right - 2 ? "end" : "middle"} className="axis-text">{formatDate(tick.date, language)}</text></g>)}
     {numbers.map((number, index) => {
       const y = top + index * laneHeight + laneHeight / 2;
       const lanePoints = points.filter((point) => point.number === number);
       return <g key={number}><text x="12" y={y + 5} className="lane-label">{number}</text><line x1={left} x2={width - right} y1={y} y2={y} className="lane-line" />{lanePoints.length > 1 && <path d={lanePoints.map((point, pointIndex) => `${pointIndex ? "L" : "M"} ${x(point.date)} ${y}`).join(" ")} className="result-line" />}{lanePoints.map((point) => {
         const isSelected = selectedPoint?.number === point.number && selectedPoint.date === point.date && selectedPoint.drawId === point.drawId;
-        return <g key={`${point.date}-${point.drawId}-${point.prizeType}`} className="point" tabIndex={0} role="button" aria-label={`${number}, ${PRIZE_LABELS[point.prizeType]}, ${formatDate(point.date)}`} onClick={() => onSelect(point)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") onSelect(point); }}><Marker x={x(point.date)} y={y} shape={index} color={PRIZE_COLORS[point.prizeType]} prize={point.prizeType} selected={isSelected} /><title>{`${number} · ${PRIZE_LABELS[point.prizeType]} · ${formatDate(point.date)}${point.daysSincePrevious ? ` · ${point.daysSincePrevious} days since previous` : ""}`}</title></g>;
+        return <g key={`${point.date}-${point.drawId}-${point.prizeType}`} className="point" tabIndex={0} role="button" aria-label={`${number}, ${t.prizes[point.prizeType]}, ${formatDate(point.date, language)}`} onClick={() => onSelect(point)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") onSelect(point); }}><Marker x={x(point.date)} y={y} shape={index} color={PRIZE_COLORS[point.prizeType]} prize={point.prizeType} selected={isSelected} /><title>{`${number} · ${t.prizes[point.prizeType]} · ${formatDate(point.date, language)}${point.daysSincePrevious ? ` · ${point.daysSincePrevious} ${t.daysSincePrevious}` : ""}`}</title></g>;
       })}</g>;
     })}
   </svg></div>;
