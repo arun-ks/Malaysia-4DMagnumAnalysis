@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { CalendarDays, ChevronRight, Coffee, Dices, Info, Mail, Search, Sparkles } from "lucide-react";
+import { CalendarDays, Check, ChevronRight, Coffee, Dices, Info, Mail, Search, Share2, Sparkles } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
 import { LANGUAGE_OPTIONS, type Language, type Translation } from "@/lib/i18n";
+import { pickDefaultNumber } from "@/lib/defaultNumbers";
+import { makeLuckyUrl, parseLuckyNumbers } from "@/lib/sharedNumbers";
 import {
   buildPoints,
   daysBetween,
@@ -23,7 +25,7 @@ const PRIZE_COLORS: Record<PrizeType, string> = {
 };
 const DAY_MS = 86_400_000;
 
-type InputSource = "manual" | "slider" | "lucky" | "empty";
+type InputSource = "manual" | "slider" | "lucky" | "url" | "empty";
 
 function getSessionId() {
   const key = "4d-results-session-id";
@@ -68,6 +70,7 @@ export function ResultsExplorer() {
   const [toDate, setToDate] = useState("");
   const [selectedPoint, setSelectedPoint] = useState<ResultPoint | null>(null);
   const [showIntervals, setShowIntervals] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
   const logTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastLogged = useRef("");
 
@@ -88,6 +91,23 @@ export function ResultsExplorer() {
     };
   }, []);
 
+  useEffect(() => {
+    const luckyParameter = new URLSearchParams(window.location.search).get("lucky");
+    const numbers = parseLuckyNumbers(luckyParameter);
+    if (numbers.length) {
+      const nextInputs = [...numbers, "", ""].slice(0, 3);
+      const nextSources = nextInputs.map((number) => (number ? "url" : "empty")) as InputSource[];
+      setInputs(nextInputs);
+      setSources(nextSources);
+      scheduleSearchLog(nextInputs, nextSources);
+    } else if (luckyParameter === null) {
+      setInputs([pickDefaultNumber(), "", ""]);
+      setSources(["lucky", "empty", "empty"]);
+    }
+  // The initial URL is deliberately applied once per page load.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const normalized = useMemo(() => inputs.map(normalizeNumber), [inputs]);
   const duplicateNumbers = normalized.filter((number): number is string => Boolean(number)).filter((number, index, all) => all.indexOf(number) !== index);
   const hasDuplicates = duplicateNumbers.length > 0;
@@ -96,13 +116,13 @@ export function ResultsExplorer() {
     [normalized],
   );
 
-  const scheduleManualLog = (nextInputs: string[], nextSources: InputSource[]) => {
+  const scheduleSearchLog = (nextInputs: string[], nextSources: InputSource[]) => {
     if (logTimer.current) clearTimeout(logTimer.current);
-    const manualNumbers = nextInputs
-      .map((value, index) => (nextSources[index] === "manual" ? normalizeNumber(value) : null))
+    const loggedNumbers = nextInputs
+      .map((value, index) => (["manual", "url"] as InputSource[]).includes(nextSources[index]) ? normalizeNumber(value) : null)
       .filter((value): value is string => Boolean(value));
-    if (!manualNumbers.length || new Set(manualNumbers).size !== manualNumbers.length) return;
-    const signature = manualNumbers.join(",");
+    if (!loggedNumbers.length || new Set(loggedNumbers).size !== loggedNumbers.length) return;
+    const signature = loggedNumbers.join(",");
     logTimer.current = setTimeout(() => {
       if (signature === lastLogged.current) return;
       lastLogged.current = signature;
@@ -112,7 +132,7 @@ export function ResultsExplorer() {
         body: JSON.stringify({
           eventId: crypto.randomUUID(),
           sessionId: getSessionId(),
-          numbers: manualNumbers,
+          numbers: loggedNumbers,
           language,
         }),
         keepalive: true,
@@ -127,7 +147,7 @@ export function ResultsExplorer() {
     setInputs(nextInputs);
     setSources(nextSources);
     setSelectedPoint(null);
-    if (value.length === 4) scheduleManualLog(nextInputs, nextSources);
+    if (value.length === 4) scheduleSearchLog(nextInputs, nextSources);
   };
 
   const finishManual = (index: number) => {
@@ -137,7 +157,7 @@ export function ResultsExplorer() {
     const nextSources = sources.map((item, itemIndex) => (itemIndex === index ? "manual" : item));
     setInputs(nextInputs);
     setSources(nextSources);
-    scheduleManualLog(nextInputs, nextSources);
+    scheduleSearchLog(nextInputs, nextSources);
   };
 
   const handleSlider = (value: string) => {
@@ -155,6 +175,26 @@ export function ResultsExplorer() {
     setInputs(randomUniqueNumbers());
     setSources(["lucky", "lucky", "lucky"]);
     setSelectedPoint(null);
+  };
+
+  const shareResults = async () => {
+    if (!selectedNumbers.length || hasDuplicates) return;
+    const url = makeLuckyUrl(window.location.origin, window.location.pathname, selectedNumbers);
+    const shareData = { title: t.shareTitle, text: t.shareText, url };
+    try {
+      if (navigator.share) await navigator.share(shareData);
+      else {
+        await navigator.clipboard.writeText(url);
+        setShareCopied(true);
+        window.setTimeout(() => setShareCopied(false), 2_500);
+      }
+    } catch (error) {
+      if ((error as DOMException).name !== "AbortError") {
+        await navigator.clipboard.writeText(url).catch(() => undefined);
+        setShareCopied(true);
+        window.setTimeout(() => setShareCopied(false), 2_500);
+      }
+    }
   };
 
   const togglePrize = (prize: PrizeType) => {
@@ -220,7 +260,7 @@ export function ResultsExplorer() {
       <section className="shell controls-card" aria-labelledby="number-heading">
         <div className="section-heading">
           <div><span className="step">1</span><h2 id="number-heading">{t.chooseNumbers}</h2></div>
-          <button className="lucky-button" type="button" onClick={feelLucky}><Dices size={19} /> {t.pickForMe}</button>
+          <div className="number-actions"><button className="share-button" type="button" onClick={shareResults} disabled={!selectedNumbers.length || hasDuplicates} aria-label={shareCopied ? t.linkCopied : t.shareResults}>{shareCopied ? <Check size={19} /> : <Share2 size={19} />}</button><button className="lucky-button" type="button" onClick={feelLucky}><Dices size={19} /> {t.pickForMe}</button></div>
         </div>
 
         <div className="number-inputs">

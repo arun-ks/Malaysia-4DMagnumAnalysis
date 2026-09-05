@@ -237,3 +237,8 @@ footer a { color: var(--red); font-weight: 700; }
   .privacy-sections section { padding: 17px; }
   .privacy-actions { justify-content: stretch; }
 }
+
+.number-actions { display: flex; align-items: center; gap: 8px; }
+.share-button { display: inline-grid; place-items: center; width: 44px; min-height: 44px; border: 1px solid #d9d0c0; border-radius: 12px; background: #fffefa; color: #594c3b; cursor: pointer; }
+.share-button:hover:not(:disabled) { color: var(--red); border-color: #e4b9b5; background: #fff6f5; }
+.share-button:disabled { color: #a8a29a; cursor: not-allowed; }
