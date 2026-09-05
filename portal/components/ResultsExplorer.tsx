@@ -260,7 +260,7 @@ export function ResultsExplorer() {
       <section className="shell controls-card" aria-labelledby="number-heading">
         <div className="section-heading">
           <div><span className="step">1</span><h2 id="number-heading">{t.chooseNumbers}</h2></div>
-          <div className="number-actions"><button className="share-button" type="button" onClick={shareResults} disabled={!selectedNumbers.length || hasDuplicates} aria-label={shareCopied ? t.linkCopied : t.shareResults}>{shareCopied ? <Check size={19} /> : <Share2 size={19} />}</button><button className="lucky-button" type="button" onClick={feelLucky}><Dices size={19} /> {t.pickForMe}</button></div>
+          <div className="number-actions"><button className="share-button" type="button" onClick={shareResults} disabled={!selectedNumbers.length || hasDuplicates}>{shareCopied ? <Check size={19} /> : <Share2 size={19} />} {shareCopied ? t.linkCopied : t.shareResults}</button><button className="lucky-button" type="button" onClick={feelLucky}><Dices size={19} /> {t.pickForMe}</button></div>
         </div>
 
         <div className="number-inputs">
